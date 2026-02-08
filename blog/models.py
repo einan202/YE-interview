@@ -10,8 +10,8 @@ from dashboard.models import Author
 class Catagory(models.Model):
     name = models.CharField(max_length=200, null=True)
     slug = models.SlugField(null=True, blank=True)
-    image = models.CharField(max_length=300, null=True, blank=True )
-    description = models.CharField(max_length=500, null=True,blank=True, verbose_name='Description')
+    image = models.CharField(max_length=300, null=True, blank=True)
+    description = models.CharField(max_length=500, null=True, blank=True, verbose_name='Description')
 
     class Meta:
         verbose_name_plural = 'Catagory'
@@ -40,11 +40,10 @@ class Blog(models.Model):
         ('active', 'active'),
     )
 
-    title  = models.CharField(max_length=200, null=True)
+    title = models.CharField(max_length=200, null=True)
     detail = models.TextField(max_length=2000, null=True)
     image = models.ImageField(upload_to='images/media', null=True, blank=True)
-    #catagories = models.ManyToManyField(Catagory)
-    catagories = models.ForeignKey(Catagory,on_delete=models.DO_NOTHING, null=True)
+    catagories = models.ForeignKey(Catagory, on_delete=models.DO_NOTHING, null=True)
     tags = models.ManyToManyField(Tag, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     #show_hide = models.CharField(max_length=5,choices=visibility, default='show')
@@ -58,31 +57,26 @@ class Blog(models.Model):
         verbose_name_plural = 'Blog'
 
     def overview(self):
-        short = self.detail[:30]
-        return short 
-    
+        return (self.detail or '')[:30]
+
     @property
     def image_url(self):
         if self.image and hasattr(self.image, 'url'):
-            return self.image.url 
+            return self.image.url
+        return None
 
     @property
     def views_last_7_days(self):
-        from django.utils import timezone
-        from django.db.models import Sum
-        from datetime import timedelta
-
         today = timezone.now().date()
         start_date = today - timedelta(days=6)
-        agg = self.daily_views.filter(date__gte=start_date, date__lte=today).aggregate(
-            Sum('views')
-        )['views__sum']
-        return agg or 0
+        result = self.daily_views.filter(
+            date__gte=start_date, date__lte=today
+        ).aggregate(total=Sum('views'))['total']
+        return result or 0
 
     def __str__(self):
-        return f"{ self.title} | { self.author.author.username} | { self.catagories} | { self.status}"
+        return f"{self.title} | {self.author.author.username} | {self.catagories} | {self.status}"
 
-# Comment Class
 class Comment(models.Model):
     post = models.ForeignKey(Blog, on_delete=models.CASCADE, related_name='comments')
     name = models.CharField(max_length=100, null=True, blank=False)
@@ -91,11 +85,11 @@ class Comment(models.Model):
     is_approved = models.BooleanField(default=False)
 
     def __str__(self):
-        return f"{self.post.title} | {self.name } "
+        return f"{self.post.title} | {self.name}"
 
-# Reply Class
+
 class Reply(models.Model):
-    comment = models.ForeignKey(Comment,on_delete=models.CASCADE, related_name='reply')
+    comment = models.ForeignKey(Comment, on_delete=models.CASCADE, related_name='reply')
     name = models.CharField(max_length=200, null=True, blank=False)
     body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -118,10 +112,10 @@ class Contact(models.Model):
     name = models.CharField(max_length=100, null=True, verbose_name='Name')
     email = models.EmailField(null=True)
     messages = models.TextField()
-    subject = models.CharField(max_length=200, null=True, verbose_name='Subjects' )
+    subject = models.CharField(max_length=200, null=True, verbose_name='Subjects')
 
     def __str__(self):
-        return f"{ self.name } | { self.subject}" 
+        return f"{self.name} | {self.subject}" 
 
 class Like(models.Model):
     REACTION_CHOICES = (

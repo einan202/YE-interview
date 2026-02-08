@@ -1,26 +1,26 @@
-from django.shortcuts import render,redirect,get_object_or_404
-from django.http import HttpResponseRedirect
-from django.views import View
-from blog.models import Blog, Catagory, Tag, Comment
-from .models import Author
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login,logout
-from django.utils.decorators import method_decorator
-from django.contrib import messages
-from django.contrib.auth.models import User
-from django.contrib.auth.hashers import make_password
-from django.db.models import Count, Sum, Q
-from django.utils import timezone
 from datetime import timedelta
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.hashers import make_password
+from django.contrib.auth.models import User
+from django.db.models import Count, Q, Sum
+from django.http import HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+from django.utils.decorators import method_decorator
+from django.views import View
+
+from blog.models import Blog, Catagory, Comment, Tag
+from .models import Author
 
 
-# user dashboard views 
+
 class Dashboard(View):
     @method_decorator(login_required(login_url='login'))
-    def dispatch(self,request,*args,**kwargs):
-        return super().dispatch(request,*args,**kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        return super().dispatch(request, *args, **kwargs)
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -29,30 +29,24 @@ class Dashboard(View):
             messages.info(request, 'You need an author profile to use the dashboard.')
             return redirect('profile')
         post = author.blog_set.all()
-        post_count = post.count()
         post_active = author.blog_set.filter(status='active')
-        post_active_count = post_active.count()
         post_pending = author.blog_set.filter(status='pending')
-        post_pending_count = post_pending.count()
         pending_comments_count = Comment.objects.filter(
-            is_approved=False,
-            post__author=author
+            is_approved=False, post__author=author
         ).count()
-        # showing the sum of visit count of active posts only (draft/pending excluded)
         post_visit_count = post_active.aggregate(Sum('visit_count'))['visit_count__sum'] or 0
-        context= {
-            'user':user,
-            'post':post,
-            'post_count':post_count,
-            'post_active':post_active,
-            'post_pending':post_pending,
-            'post_active_count':post_active_count,
-            'post_pending_count':post_pending_count,
+        context = {
+            'user': user,
+            'post': post,
+            'post_count': post.count(),
+            'post_active': post_active,
+            'post_pending': post_pending,
+            'post_active_count': post_active.count(),
+            'post_pending_count': post_pending.count(),
             'pending_comments_count': pending_comments_count,
-            'count':post_visit_count
-
+            'count': post_visit_count,
         }
-        return render(request,'dashboard/dash/dashboard.html',context)
+        return render(request, 'dashboard/dash/dashboard.html', context)
 
 # Create Author 
 class CreateAuthor(View):

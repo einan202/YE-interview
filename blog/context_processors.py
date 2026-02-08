@@ -1,7 +1,8 @@
-# for blog views  global varibale calls
-from .models import Catagory, Blog
+"""Context processors for blog app (global template variables)."""
 from django.db.models import Count, Q
 from django.utils.text import slugify
+
+from .models import Catagory
 
 
 def _ensure_category_slugs():
@@ -13,19 +14,15 @@ def _ensure_category_slugs():
 
 
 def globalVariable(request):
+    """Expose top categories by post count for nav (max 4)."""
     _ensure_category_slugs()
-    # showing The categories with most post under each category
-    category = Catagory.objects.all()\
-        .annotate(post_count=Count('blog'))\
-        .filter(blog__isnull=False)\
+    category = (
+        Catagory.objects.all()
+        .annotate(post_count=Count('blog'))
+        .filter(blog__isnull=False)
         .order_by('-post_count')[:4]
-    category_count = category.count()
-    context = {
+    )
+    return {
         'category': category,
-        'cat_count': category_count
+        'cat_count': category.count(),
     }
-    return context
-## Information
-#.annotate(post_count=Count('blog'))\ -> countin the blog post under each category
-#.filter(blog__isnull=False)\ -> Filtering the blog model so that category without post wont display
-#.order_by('-post_count')[:5] -> ordering by most post , category with max posts will show first. 
