@@ -1,8 +1,11 @@
+from datetime import timedelta
 
-import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Sum
+from django.utils import timezone
 from django.utils.text import slugify
+
 from dashboard.models import Author
 
 
@@ -63,7 +66,8 @@ class Blog(models.Model):
     def image_url(self):
         if self.image and hasattr(self.image, 'url'):
             return self.image.url
-        return None
+        from django.conf import settings
+        return settings.STATIC_URL + 'images/default-avatar.png'
 
     @property
     def views_last_7_days(self):
